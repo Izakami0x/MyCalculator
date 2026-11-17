@@ -92,7 +92,8 @@ class Field(QFrame):
         return self.edit.text()
 
     def set_text(self, text: str) -> None:
-        self.edit.setText(text)
+        if self.edit.text() != text:
+            self.edit.setText(text)
 
     def set_suffix(self, text: str) -> None:
         self.suffix.setText(text)
@@ -148,7 +149,9 @@ class StatusLine(QWidget):
             repolish(self.text)
         if self.text.text() != text:
             self.text.setText(text)
-        self.setToolTip(tooltip or text)
+        effective_tooltip = tooltip or text
+        if self.toolTip() != effective_tooltip:
+            self.setToolTip(effective_tooltip)
 
 
 class DragHeader(QFrame):
