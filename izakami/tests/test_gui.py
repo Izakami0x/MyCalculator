@@ -47,6 +47,17 @@ def test_auto_recalculation_and_direction(win):
     assert win.tp.text() == "93,500.00"  # 95000 - 3 x 500
 
 
+def test_btcusd_with_forex_prices_shows_visible_calculation_error(win):
+    pick(win, "BTCUSDT")
+    win.entry.set_text("1.1000")
+    win.stop.set_text("1.0950")
+    assert win.size_value.text() == "—"
+    assert win.status.kind == "error"
+    assert win.status.text.property("kind") == "error"
+    assert "exceeds the maximum" in win.status.text.text()
+    assert "BTCUSDT" in win.status.toolTip() or "BTCUSDT" in win.status.text.text()
+
+
 def test_error_clears_stale_numbers(win):
     pick(win, "EURUSD")
     win.entry.set_text("1.1000")
