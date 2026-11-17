@@ -326,7 +326,6 @@ class MainWindow(QWidget):
             self._update_hints()
         finally:
             self._loading = False
-        self.recalculate()
 
     def _sync_risk_field(self) -> None:
         acc = self.ctx.settings.account()
@@ -426,7 +425,8 @@ class MainWindow(QWidget):
         self._render(result, inst)
 
     def _clear_numbers(self) -> None:
-        self.size_value.setText("—")
+        if self.size_value.text() != "—":
+            self.size_value.setText("—")
         for stat in (self.position_value, self.margin, self.risk_amount):
             stat.set_value("—")
         self.risk_distance.set_value("—")
@@ -448,7 +448,8 @@ class MainWindow(QWidget):
 
     def _render(self, r: Optional[CalculationResult], inst: Instrument) -> None:
         cur = self._currency
-        self.size_unit.setText(inst.quantity_unit)
+        if self.size_unit.text() != inst.quantity_unit:
+            self.size_unit.setText(inst.quantity_unit)
         if r is None:
             self._last_error_toast_key = None
             self._clear_numbers()
@@ -477,7 +478,9 @@ class MainWindow(QWidget):
         self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
         assert r.quantity is not None and r.notional is not None and r.margin is not None
         assert r.potential_loss is not None and r.potential_profit is not None and r.take_profit is not None
-        self.size_value.setText(fmt_qty(r.quantity, inst.quantity_decimals))
+        size_text = fmt_qty(r.quantity, inst.quantity_decimals)
+        if self.size_value.text() != size_text:
+            self.size_value.setText(size_text)
         self.position_value.set_value(f"{fmt_money(r.notional)} {cur}")
         self.margin.set_value(f"≈ {fmt_money(r.margin)} {cur}")
         if r.recommended_leverage is not None:
@@ -610,6 +613,7 @@ class MainWindow(QWidget):
         self._load_from_settings()
         self.set_always_on_top(self.ctx.settings.get_bool("always_on_top"))
         self.apply_hotkeys(show_dialog=True)
+        self.recalculate()
 
     def open_instrument_manager(self) -> None:
         from .instrument_manager import InstrumentManager
