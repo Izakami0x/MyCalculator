@@ -6,7 +6,6 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
-    QGraphicsOpacityEffect,
     QGuiApplication,
     QHBoxLayout,
     QLabel,
@@ -43,12 +42,8 @@ class SuccessToast(QFrame):
         shadow.setOffset(0, 6)
         self.setGraphicsEffect(shadow)
 
-        self._opacity = QGraphicsOpacityEffect(self)
-        self._opacity.setOpacity(1.0)
-        self.setGraphicsEffect(shadow)
-        # Keep opacity on the top-level widget without replacing the shadow effect:
-        # the shadow is applied to the inner content through the stylesheet instead.
         self._shadow = shadow
+        self._fade_animation: QPropertyAnimation | None = None
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._animate_out)
@@ -114,7 +109,7 @@ class SuccessToast(QFrame):
         )
         start_pos = end_pos + QPoint(34, 0)
         self.move(start_pos)
-        self._opacity.setOpacity(0.0)
+        self.setWindowOpacity(0.0)
         self.show()
         self.raise_()
 
@@ -126,7 +121,7 @@ class SuccessToast(QFrame):
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._animation.start()
 
-        fade = QPropertyAnimation(self._opacity, b"opacity", self)
+        fade = QPropertyAnimation(self, b"windowOpacity", self)
         fade.setDuration(260)
         fade.setStartValue(0.0)
         fade.setEndValue(1.0)
@@ -149,7 +144,7 @@ class SuccessToast(QFrame):
         self._animation.setEasingCurve(QEasingCurve.Type.InCubic)
         self._animation.finished.connect(self.hide)
         self._animation.start()
-        fade = QPropertyAnimation(self._opacity, b"opacity", self)
+        fade = QPropertyAnimation(self, b"windowOpacity", self)
         fade.setDuration(200)
         fade.setStartValue(1.0)
         fade.setEndValue(0.0)
