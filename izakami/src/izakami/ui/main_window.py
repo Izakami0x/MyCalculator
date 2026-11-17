@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 from PySide6.QtCore import QRect, Qt, QTimer, Signal
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPixmap, QGuiApplication
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout, QLabel, QMessageBox,
                                QPushButton, QSizeGrip, QToolButton, QVBoxLayout, QWidget)
 
@@ -107,7 +107,7 @@ class MainWindow(QWidget):
         hl.addWidget(title_box)
         hl.addStretch(1)
         self.aot_btn = QToolButton()
-        self.aot_btn.setText("📍")
+        self.aot_btn.setIconSize(QPixmap(20, 20).size())
         self.aot_btn.setToolTip("Always on top")
         self.aot_btn.setAccessibleName("Always on top")
         self.aot_btn.setCheckable(True)
@@ -286,6 +286,29 @@ class MainWindow(QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.clicked.connect(slot)
         return button
+
+    def _refresh_pin_icon(self) -> None:
+        """Draw a small pin glyph using the active theme's muted/accent color."""
+        name = self.ctx.settings.get("theme")
+        color = palette(name)["accent"] if self._always_on_top else palette(name)["muted"]
+        pixmap = QPixmap(20, 20)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(color))
+        pin = QPainterPath()
+        pin.moveTo(10, 1)
+        pin.cubicTo(5.5, 1, 3, 4.2, 3, 8)
+        pin.cubicTo(3, 11, 6.2, 13.5, 8.2, 15.2)
+        pin.lineTo(10, 19)
+        pin.lineTo(11.8, 15.2)
+        pin.cubicTo(13.8, 13.5, 17, 11, 17, 8)
+        pin.cubicTo(17, 4.2, 14.5, 1, 10, 1)
+        pin.closeSubpath()
+        painter.drawPath(pin)
+        painter.end()
+        self.aot_btn.setIcon(QIcon(pixmap))
 
     # ------------------------------------------------------------------ settings <-> UI
     def _load_from_settings(self) -> None:
@@ -516,6 +539,7 @@ class MainWindow(QWidget):
         self.logo.set_color(palette(name)["text"])
         self.theme_btn.setText("☀" if name == "dark" else "☾")
         self._success_toast.apply_theme(name)
+        self._refresh_pin_icon()
 
     def toggle_theme(self) -> None:
         new = "light" if self.ctx.settings.get("theme") == "dark" else "dark"
@@ -544,8 +568,8 @@ class MainWindow(QWidget):
         self.aot_btn.blockSignals(True)
         self.aot_btn.setChecked(on)
         self.aot_btn.blockSignals(False)
-        self.aot_btn.setText("📌" if on else "📍")
         self.aot_btn.setToolTip("Unpin from top" if on else "Keep on top")
+        self._refresh_pin_icon()
         self.aot_btn.setProperty("on", on)
         repolish(self.aot_btn)
 
