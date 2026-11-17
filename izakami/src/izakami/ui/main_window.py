@@ -458,6 +458,8 @@ class MainWindow(QWidget):
             self._clear_numbers()
             if r.risk_amount is not None:
                 self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
+            configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
+            self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
             self.status.set_status("error", r.errors[0], "\n".join(r.errors))
             return
         if r.risk_amount is not None:
