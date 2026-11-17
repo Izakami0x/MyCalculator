@@ -195,7 +195,7 @@ class MainWindow(QWidget):
         root.addLayout(prices)
         info = QHBoxLayout()
         self.risk_amount = Stat("Risk Amount")
-        self.risk_distance = Stat("Risk Distance")
+        self.risk_distance = Stat("Leverage")
         info.addWidget(self.risk_amount)
         info.addWidget(self.risk_distance)
         info.addStretch(1)
@@ -426,8 +426,9 @@ class MainWindow(QWidget):
 
     def _clear_numbers(self) -> None:
         self.size_value.setText("—")
-        for stat in (self.position_value, self.margin, self.risk_amount, self.risk_distance):
+        for stat in (self.position_value, self.margin, self.risk_amount):
             stat.set_value("—")
+        self.risk_distance.set_value("—")
         self.loss.set_value("—")
         self.profit.set_value("—")
         self.tp.set_text("")
@@ -451,9 +452,8 @@ class MainWindow(QWidget):
         self._set_direction(r.direction)
         if r.risk_amount is not None:
             self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
-        if r.risk_distance is not None and r.risk_distance_pct is not None:
-            self.risk_distance.set_value(
-                f"{fmt_price(r.risk_distance, inst.price_decimals)} ({r.risk_distance_pct:.2f}%)")
+        configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
+        self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
         if not r.ok:
             self.status.set_status("error", r.errors[0], "\n".join(r.errors))
             return
@@ -462,6 +462,9 @@ class MainWindow(QWidget):
         self.size_value.setText(fmt_qty(r.quantity, inst.quantity_decimals))
         self.position_value.set_value(f"{fmt_money(r.notional)} {cur}")
         self.margin.set_value(f"≈ {fmt_money(r.margin)} {cur}")
+        if r.recommended_leverage is not None:
+            suggested = r.recommended_leverage.quantize(Decimal("0.01"), rounding="ROUND_CEILING")
+            self.risk_distance.set_value(f"{format_plain(suggested)}x suggested")
         self.loss.set_value(f"-{fmt_money(r.potential_loss)} {cur}", "loss")
         self.profit.set_value(f"+{fmt_money(r.potential_profit)} {cur}", "profit")
         self.tp.set_text(fmt_price(r.take_profit, inst.price_decimals))

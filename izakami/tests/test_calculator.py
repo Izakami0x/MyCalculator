@@ -144,3 +144,25 @@ def test_take_profit_rounds_toward_entry():
 
 def test_every_preset_is_valid():
     assert all(not p.validate() for p in P.values())
+
+
+def test_recommends_leverage_when_margin_exceeds_balance_without_changing_configured_value():
+    instrument = replace(P["EURUSD"], leverage=D("1"))
+    result = run(entry="1.1", stop="1.095", balance="10000", inst=instrument)
+    assert result.ok and result.margin > D("10000")
+    assert result.recommended_leverage == D("2.2")
+    assert instrument.leverage == D("1")
+
+
+def test_uses_configured_leverage_when_margin_fits_balance():
+    instrument = replace(P["EURUSD"], leverage=D("10"))
+    result = run(entry="1.1", stop="1.095", balance="10000", inst=instrument)
+    assert result.ok and result.margin <= D("10000")
+    assert result.recommended_leverage is None
+
+
+def test_no_leverage_recommendation_when_margin_rate_overrides_leverage():
+    instrument = replace(P["EURUSD"], margin_rate=D("0.5"))
+    result = run(entry="1.1", stop="1.095", balance="10000", inst=instrument)
+    assert result.ok and result.margin > D("10000")
+    assert result.recommended_leverage is None

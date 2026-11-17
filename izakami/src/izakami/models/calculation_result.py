@@ -33,6 +33,7 @@ class CalculationResult:
     quantity: Optional[Decimal] = None
     notional: Optional[Decimal] = None
     margin: Optional[Decimal] = None
+    recommended_leverage: Optional[Decimal] = None
     potential_loss: Optional[Decimal] = None
     potential_profit: Optional[Decimal] = None
     quantity_unit: str = ""
