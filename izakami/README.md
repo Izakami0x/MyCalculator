@@ -84,8 +84,9 @@ tests/                 pytest suite
 
 ```
 INSTALL_AND_RUN.bat                       (once, to create .venv)
-.venv\Scripts\python -m pip install -r requirements-dev.txt
-.venv\Scripts\python -m pytest
+.venv\Scripts\python.exe -m venv .build-venv
+.build-venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.build-venv\Scripts\python.exe -m pytest
 ```
 
 The tests cover the engine, database/migrations, instruments, shortcut parsing and the capture logic
