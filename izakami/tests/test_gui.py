@@ -33,6 +33,14 @@ def test_startup_defaults(win):
     assert win._always_on_top and win.aot_btn.isChecked()
 
 
+def test_toast_is_independent_and_stays_above_other_windows(win):
+    toast = win._success_toast
+    assert toast.parentWidget() is None
+    assert toast.windowFlags() & Qt.WindowType.Tool
+    assert toast.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+    assert toast.testAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+
+
 def test_startup_runs_initial_calculation_once(qtbot, tmp_path):
     ctx = create_context(tmp_path / "startup.db", use_platform=False)
     original = ctx.calc.calculate_from_text

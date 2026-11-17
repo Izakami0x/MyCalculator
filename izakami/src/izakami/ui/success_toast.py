@@ -14,12 +14,15 @@ from PySide6.QtWidgets import (
 class SuccessToast(QFrame):
     """A non-intrusive toast anchored to the active screen's bottom-right corner."""
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
+        # This must be an independent desktop tool window, not owned by the
+        # calculator. An owned child is hidden when the main window is minimized.
         super().__init__(
             parent,
-            Qt.WindowType.ToolTip
+            Qt.WindowType.Tool
             | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowDoesNotAcceptFocus,
+            | Qt.WindowType.WindowDoesNotAcceptFocus
+            | Qt.WindowType.WindowStaysOnTopHint,
         )
         self.setObjectName("SuccessToast")
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
