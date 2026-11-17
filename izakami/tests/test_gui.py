@@ -56,6 +56,9 @@ def test_btcusdt_with_forex_prices_shows_visible_calculation_error(win):
     assert win.status.text.property("kind") == "error"
     assert "exceeds the maximum" in win.status.text.text()
     assert "BTCUSDT" in win.status.toolTip() or "BTCUSDT" in win.status.text.text()
+    assert win._success_toast.label.text() == "Invalid inputs • BTCUSDT"
+    assert win._success_toast.icon_label.text() == "!"
+    assert win._success_toast.isVisible()
 
 
 def test_error_clears_stale_numbers(win):
