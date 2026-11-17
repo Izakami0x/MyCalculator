@@ -2,14 +2,18 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
-    echo Run INSTALL_AND_RUN.bat once first so the private environment exists.
+    echo Run INSTALL_AND_RUN.bat once first so the runtime environment exists.
     pause
     exit /b 1
 )
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check pyinstaller
+if not exist ".build-venv\Scripts\python.exe" (
+    ".venv\Scripts\python.exe" -m venv ".build-venv"
+    if errorlevel 1 goto :fail
+)
+".build-venv\Scripts\python.exe" -m pip install --disable-pip-version-check --no-cache-dir -r requirements-dev.txt
 if errorlevel 1 goto :fail
-rem One-folder build: starts faster and triggers fewer antivirus false positives than --onefile.
-".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --windowed --name IzakamiRiskCalculator --paths src run.py
+rem Keep build and test tools out of the normal runtime environment.
+".build-venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --windowed --name IzakamiRiskCalculator --paths src run.py
 if errorlevel 1 goto :fail
 echo.
 echo Done. Run: dist\IzakamiRiskCalculator\IzakamiRiskCalculator.exe
