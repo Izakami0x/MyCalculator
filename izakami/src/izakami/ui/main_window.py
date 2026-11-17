@@ -435,28 +435,35 @@ class MainWindow(QWidget):
 
     def _set_direction(self, direction: Optional[Direction]) -> None:
         tone = {Direction.LONG: "long", Direction.SHORT: "short"}.get(direction, "")
-        self.direction_pill.setText({"long": "▲  LONG", "short": "▼  SHORT"}.get(tone, "—"))
-        self.direction_pill.setProperty("direction", tone)
-        self.accent.setProperty("tone", tone)
-        repolish(self.direction_pill)
-        repolish(self.accent)
+        label = {"long": "▲  LONG", "short": "▼  SHORT"}.get(tone, "—")
+        if self.direction_pill.text() != label:
+            self.direction_pill.setText(label)
+        if self.direction_pill.property("direction") != tone:
+            self.direction_pill.setProperty("direction", tone)
+            repolish(self.direction_pill)
+        if self.accent.property("tone") != tone:
+            self.accent.setProperty("tone", tone)
+            repolish(self.accent)
 
     def _render(self, r: Optional[CalculationResult], inst: Instrument) -> None:
         cur = self._currency
-        self._clear_numbers()
         self.size_unit.setText(inst.quantity_unit)
         if r is None:
+            self._clear_numbers()
             self._set_direction(None)
             self.status.set_status("info", "Enter Entry and Stop Loss to calculate.")
             return
         self._set_direction(r.direction)
+        if not r.ok:
+            self._clear_numbers()
+            if r.risk_amount is not None:
+                self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
+            self.status.set_status("error", r.errors[0], "\n".join(r.errors))
+            return
         if r.risk_amount is not None:
             self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
         configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
         self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
-        if not r.ok:
-            self.status.set_status("error", r.errors[0], "\n".join(r.errors))
-            return
         assert r.quantity is not None and r.notional is not None and r.margin is not None
         assert r.potential_loss is not None and r.potential_profit is not None and r.take_profit is not None
         self.size_value.setText(fmt_qty(r.quantity, inst.quantity_decimals))
