@@ -33,6 +33,28 @@ def test_startup_defaults(win):
     assert win._always_on_top and win.aot_btn.isChecked()
 
 
+def test_startup_runs_initial_calculation_once(qtbot, tmp_path):
+    ctx = create_context(tmp_path / "startup.db", use_platform=False)
+    original = ctx.calc.calculate_from_text
+    calls = []
+
+    def counted_calculation(**kwargs):
+        calls.append(1)
+        return original(**kwargs)
+
+    ctx.calc.calculate_from_text = counted_calculation
+    w = MainWindow(ctx)
+    qtbot.addWidget(w)
+    assert len(calls) == 1
+
+
+def test_setting_field_to_same_text_does_not_emit_change(win):
+    changes = []
+    win.entry.edit.textChanged.connect(changes.append)
+    win.entry.set_text(win.entry.text())
+    assert changes == []
+
+
 def test_auto_recalculation_and_direction(win):
     pick(win, "BTCUSDT")
     win.balance.set_text("1000")
