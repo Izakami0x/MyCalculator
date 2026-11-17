@@ -64,7 +64,8 @@ echo.
 echo The private environment could not be used. Switching to a local library folder...
 echo Virtual environment unusable, falling back to local libs >> "%LOG%"
 if exist ".venv" rmdir /s /q ".venv"
-%PYCMD% -m pip install --disable-pip-version-check --upgrade --target "%~dp0libs" -r requirements.txt >> "%LOG%" 2>&1
+if exist "libs" rmdir /s /q "libs"
+%PYCMD% -m pip install --disable-pip-version-check --no-cache-dir --target "%~dp0libs" -r requirements.txt >> "%LOG%" 2>&1
 if errorlevel 1 goto :fail
 set "PYW="
 for /f "usebackq delims=" %%P in (`%PYCMD% -c "import sys,os; d=os.path.dirname(sys.executable); w=os.path.join(d,'pythonw.exe'); print(w if os.path.exists(w) else sys.executable)"`) do set "PYW=%%P"
