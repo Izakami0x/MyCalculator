@@ -41,7 +41,7 @@ class MainWindow(QWidget):
         self._last_error_toast_key: tuple[str, str] | None = None
         self._always_on_top = False
         from .success_toast import SuccessToast
-        self._success_toast = SuccessToast(self)
+        self._success_toast = SuccessToast()
         self._currency = "USD"
         self._risk_mode = RiskMode.PERCENT
 
