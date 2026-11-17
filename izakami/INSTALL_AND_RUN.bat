@@ -50,8 +50,8 @@ rem A venv that cannot start ^(e.g. "failed to locate pyvenv.cfg"^) is useless: 
 if errorlevel 1 goto :novenv
 
 echo Installing dependencies. The first run can take a few minutes...
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --upgrade pip >> "%LOG%" 2>&1
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt >> "%LOG%" 2>&1
+".venv\Scripts\python.exe" -m pip uninstall -y PySide6 PySide6_Addons PySide6_WebEngine PySide6_Pdf >> "%LOG%" 2>&1
+".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --no-cache-dir -r requirements.txt >> "%LOG%" 2>&1
 if errorlevel 1 goto :novenv
 
 echo @echo off>"launch.cmd"
