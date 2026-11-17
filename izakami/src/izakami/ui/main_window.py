@@ -38,6 +38,7 @@ class MainWindow(QWidget):
         self._result_inst: Optional[Instrument] = None
         self._loading = False
         self._last_copy = 0.0
+        self._last_error_toast_key: tuple[str, str] | None = None
         self._always_on_top = False
         from .success_toast import SuccessToast
         self._success_toast = SuccessToast(self)
@@ -449,6 +450,7 @@ class MainWindow(QWidget):
         cur = self._currency
         self.size_unit.setText(inst.quantity_unit)
         if r is None:
+            self._last_error_toast_key = None
             self._clear_numbers()
             self._set_direction(None)
             self.status.set_status("info", "Enter Entry and Stop Loss to calculate.")
@@ -463,7 +465,12 @@ class MainWindow(QWidget):
             details = "\n".join(r.errors)
             guidance = f"Selected instrument: {inst.symbol}. Check the instrument and Entry / Stop Loss prices."
             self.status.set_status("error", r.errors[0], f"{details}\n{guidance}")
+            error_key = (inst.symbol, r.errors[0])
+            if error_key != self._last_error_toast_key:
+                self._success_toast.show_error_message(f"Invalid inputs • {inst.symbol}")
+                self._last_error_toast_key = error_key
             return
+        self._last_error_toast_key = None
         if r.risk_amount is not None:
             self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
         configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
