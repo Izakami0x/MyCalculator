@@ -143,7 +143,9 @@ class StatusLine(QWidget):
         if self.kind != kind:
             self.kind = kind
             self.dot.setProperty("kind", kind)
+            self.text.setProperty("kind", kind)
             repolish(self.dot)
+            repolish(self.text)
         if self.text.text() != text:
             self.text.setText(text)
         self.setToolTip(tooltip or text)
