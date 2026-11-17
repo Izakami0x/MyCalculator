@@ -137,7 +137,7 @@ class StatusLine(QWidget):
         self.text.setWordWrap(False)
         layout.addWidget(self.dot)
         layout.addWidget(self.text, 1)
-        self.kind = "info"
+        self.kind = ""
 
     def set_status(self, kind: str, text: str, tooltip: str = "") -> None:
         if self.kind != kind:
