@@ -53,15 +53,19 @@ class SuccessToast(QFrame):
 
     def apply_theme(self, name: str) -> None:
         if name == "light":
-            bg, border, text, accent = "#ffffff", "#dfe2e8", "#14171c", "#0b9a69"
+            bg, border, text, accent, accent_bg = (
+                "#ffffff", "#dfe2e8", "#14171c", "#0b9a69", "rgba(11,154,105,0.10)"
+            )
         else:
-            bg, border, text, accent = "#20262f", "#35404d", "#e8ebf0", "#2ecc8f"
+            bg, border, text, accent, accent_bg = (
+                "#20262f", "#35404d", "#e8ebf0", "#2ecc8f", "rgba(46,204,143,0.13)"
+            )
         self.setStyleSheet(
             "QFrame#SuccessToast {"
             f" background:{bg}; border:1px solid {border}; border-radius:14px;"
             " }"
             "QLabel#ToastIcon {"
-            f" color:{accent}; background:rgba(46,204,143,0.13);"
+            f" color:{accent}; background:{accent_bg};"
             " border-radius:12px; min-width:24px; max-width:24px;"
             " min-height:24px; max-height:24px; font-size:14px;"
             " font-weight:800; qproperty-alignment: AlignCenter;"
