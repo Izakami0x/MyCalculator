@@ -133,10 +133,16 @@ def calculate(inp: CalcInputs, external_rate: Optional[ExternalRate] = None) -> 
         )
     notional = notional_pnl * conv.rate
 
+    configured_leverage = inst.leverage if inst.leverage is not None else inp.default_leverage
     if inst.margin_rate is not None:
         margin = notional * inst.margin_rate
     else:
-        margin = notional / (inst.leverage if inst.leverage is not None else inp.default_leverage)
+        margin = notional / configured_leverage
+    recommended_leverage = (
+        notional / inp.balance
+        if margin > inp.balance and inst.margin_rate is None
+        else None
+    )
 
     # Take-profit: rounded to the tick grid *toward entry* so the target is never overstated.
     if direction is Direction.LONG:
@@ -167,6 +173,7 @@ def calculate(inp: CalcInputs, external_rate: Optional[ExternalRate] = None) -> 
         quantity=qty,
         notional=notional,
         margin=margin,
+        recommended_leverage=recommended_leverage,
         potential_loss=potential_loss,
         potential_profit=potential_profit,
         quantity_unit=unit,

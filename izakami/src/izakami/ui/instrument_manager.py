@@ -37,7 +37,7 @@ class InstrumentManager(QDialog):
         self._dirty = False
         self._loading = False
         self.setWindowTitle("Instrument Manager")
-        self.setMinimumSize(780, 560)
+        self.setMinimumSize(700, 500)
 
         # left: search + list
         left = QVBoxLayout()
@@ -59,7 +59,7 @@ class InstrumentManager(QDialog):
         # right: form
         right = QVBoxLayout()
         form = QFormLayout()
-        form.setVerticalSpacing(8)
+        form.setVerticalSpacing(6)
         self.symbol = QLineEdit()
         self.asset_class = QComboBox()
         self.asset_class.addItems(ASSET_CLASSES)
@@ -265,3 +265,11 @@ class InstrumentManager(QDialog):
                 return
         self.ctx.settings.set("selected_instrument", self._current.symbol)
         self.accept()
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        try:
+            from ..platform.windows.window_effects import apply_titlebar_theme
+            apply_titlebar_theme(self, self.ctx.settings.get("theme"))
+        except (ImportError, OSError, AttributeError):
+            pass

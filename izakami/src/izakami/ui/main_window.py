@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 from PySide6.QtCore import QRect, Qt, QTimer, Signal
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPixmap, QGuiApplication
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout, QLabel, QMessageBox,
                                QPushButton, QSizeGrip, QToolButton, QVBoxLayout, QWidget)
 
@@ -38,6 +38,9 @@ class MainWindow(QWidget):
         self._result_inst: Optional[Instrument] = None
         self._loading = False
         self._last_copy = 0.0
+        self._always_on_top = False
+        from .success_toast import SuccessToast
+        self._success_toast = SuccessToast(self)
         self._currency = "USD"
         self._risk_mode = RiskMode.PERCENT
 
@@ -73,8 +76,8 @@ class MainWindow(QWidget):
         self.card.setObjectName("Card")
         outer.addWidget(self.card)
         root = QVBoxLayout(self.card)
-        root.setContentsMargins(26, 18, 26, 12)
-        root.setSpacing(14)
+        root.setContentsMargins(20, 16, 20, 10)
+        root.setSpacing(10)
 
         # Header ---------------------------------------------------------------
         header = DragHeader()
@@ -100,13 +103,15 @@ class MainWindow(QWidget):
         titles.addWidget(sub)
         title_box = QWidget()
         title_box.setLayout(titles)
-        title_box.setMinimumWidth(190)  # never let the wordmark be squeezed and clipped
+        title_box.setMinimumWidth(130)
         hl.addWidget(title_box)
         hl.addStretch(1)
-        self.aot_btn = QPushButton("● Always On Top")
-        self.aot_btn.setMinimumWidth(130)
+        self.aot_btn = QToolButton()
+        self.aot_btn.setIconSize(QPixmap(20, 20).size())
+        self.aot_btn.setToolTip("Always on top")
+        self.aot_btn.setAccessibleName("Always on top")
         self.aot_btn.setCheckable(True)
-        self.aot_btn.setProperty("role", "toggle")
+        self.aot_btn.setProperty("role", "pin")
         self.aot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.aot_btn.toggled.connect(self._on_aot_toggled)
         hl.addWidget(self.aot_btn)
@@ -190,7 +195,7 @@ class MainWindow(QWidget):
         root.addLayout(prices)
         info = QHBoxLayout()
         self.risk_amount = Stat("Risk Amount")
-        self.risk_distance = Stat("Risk Distance")
+        self.risk_distance = Stat("Leverage")
         info.addWidget(self.risk_amount)
         info.addWidget(self.risk_distance)
         info.addStretch(1)
@@ -281,6 +286,29 @@ class MainWindow(QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.clicked.connect(slot)
         return button
+
+    def _refresh_pin_icon(self) -> None:
+        """Draw a small pin glyph using the active theme's muted/accent color."""
+        name = self.ctx.settings.get("theme")
+        color = palette(name)["accent"] if self._always_on_top else palette(name)["muted"]
+        pixmap = QPixmap(20, 20)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(color))
+        pin = QPainterPath()
+        pin.moveTo(10, 1)
+        pin.cubicTo(5.5, 1, 3, 4.2, 3, 8)
+        pin.cubicTo(3, 11, 6.2, 13.5, 8.2, 15.2)
+        pin.lineTo(10, 19)
+        pin.lineTo(11.8, 15.2)
+        pin.cubicTo(13.8, 13.5, 17, 11, 17, 8)
+        pin.cubicTo(17, 4.2, 14.5, 1, 10, 1)
+        pin.closeSubpath()
+        painter.drawPath(pin)
+        painter.end()
+        self.aot_btn.setIcon(QIcon(pixmap))
 
     # ------------------------------------------------------------------ settings <-> UI
     def _load_from_settings(self) -> None:
@@ -398,8 +426,9 @@ class MainWindow(QWidget):
 
     def _clear_numbers(self) -> None:
         self.size_value.setText("—")
-        for stat in (self.position_value, self.margin, self.risk_amount, self.risk_distance):
+        for stat in (self.position_value, self.margin, self.risk_amount):
             stat.set_value("—")
+        self.risk_distance.set_value("—")
         self.loss.set_value("—")
         self.profit.set_value("—")
         self.tp.set_text("")
@@ -423,9 +452,8 @@ class MainWindow(QWidget):
         self._set_direction(r.direction)
         if r.risk_amount is not None:
             self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
-        if r.risk_distance is not None and r.risk_distance_pct is not None:
-            self.risk_distance.set_value(
-                f"{fmt_price(r.risk_distance, inst.price_decimals)} ({r.risk_distance_pct:.2f}%)")
+        configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
+        self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
         if not r.ok:
             self.status.set_status("error", r.errors[0], "\n".join(r.errors))
             return
@@ -434,6 +462,9 @@ class MainWindow(QWidget):
         self.size_value.setText(fmt_qty(r.quantity, inst.quantity_decimals))
         self.position_value.set_value(f"{fmt_money(r.notional)} {cur}")
         self.margin.set_value(f"≈ {fmt_money(r.margin)} {cur}")
+        if r.recommended_leverage is not None:
+            suggested = r.recommended_leverage.quantize(Decimal("0.01"), rounding="ROUND_CEILING")
+            self.risk_distance.set_value(f"{format_plain(suggested)}x suggested")
         self.loss.set_value(f"-{fmt_money(r.potential_loss)} {cur}", "loss")
         self.profit.set_value(f"+{fmt_money(r.potential_profit)} {cur}", "profit")
         self.tp.set_text(fmt_price(r.take_profit, inst.price_decimals))
@@ -461,6 +492,7 @@ class MainWindow(QWidget):
         text = qty_text(r.quantity, inst.quantity_decimals)
         QGuiApplication.clipboard().setText(text)
         self.status.set_status("ready", f"Copied {text} to the clipboard.")
+        self._success_toast.show_message("Lot size copied")
 
     def _on_hotkey(self, action: str) -> None:
         if action == ACTION_COPY:
@@ -485,6 +517,7 @@ class MainWindow(QWidget):
             return
         field = self.entry if outcome.kind == KIND_ENTRY else self.stop
         field.set_text(format_plain(outcome.value))
+        self._success_toast.show_message("Entry price pasted" if outcome.kind == KIND_ENTRY else "Stop Loss pasted")
         if self._result is None or self._result.ok:
             self.status.set_status("ready", outcome.message)
 
@@ -508,6 +541,8 @@ class MainWindow(QWidget):
             app.setStyleSheet(build_stylesheet(name))
         self.logo.set_color(palette(name)["text"])
         self.theme_btn.setText("☀" if name == "dark" else "☾")
+        self._success_toast.apply_theme(name)
+        self._refresh_pin_icon()
 
     def toggle_theme(self) -> None:
         new = "light" if self.ctx.settings.get("theme") == "dark" else "dark"
@@ -515,16 +550,29 @@ class MainWindow(QWidget):
         self.apply_theme(new)
 
     def set_always_on_top(self, on: bool) -> None:
+        """Toggle native topmost state without hiding/recreating the Windows window."""
         on = bool(on)
-        if on != bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint):
-            geometry, visible = self.geometry(), self.isVisible()
-            self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
-            if visible:
-                self.show()
-                self.setGeometry(geometry)
+        if on != self._always_on_top:
+            try:
+                from ..platform.windows.window_effects import set_window_topmost
+                applied = set_window_topmost(self, on)
+            except (ImportError, OSError, AttributeError):
+                applied = False
+            if not applied:
+                # Non-Windows fallback; native Windows path above avoids Qt's hide/show cycle.
+                if self.isVisible():
+                    geometry = self.geometry()
+                    self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
+                    self.show()
+                    self.setGeometry(geometry)
+                else:
+                    self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
+            self._always_on_top = on
         self.aot_btn.blockSignals(True)
         self.aot_btn.setChecked(on)
         self.aot_btn.blockSignals(False)
+        self.aot_btn.setToolTip("Unpin from top" if on else "Keep on top")
+        self._refresh_pin_icon()
         self.aot_btn.setProperty("on", on)
         repolish(self.aot_btn)
 
