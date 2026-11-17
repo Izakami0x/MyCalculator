@@ -47,7 +47,7 @@ def test_auto_recalculation_and_direction(win):
     assert win.tp.text() == "93,500.00"  # 95000 - 3 x 500
 
 
-def test_btcusd_with_forex_prices_shows_visible_calculation_error(win):
+def test_btcusdt_with_forex_prices_shows_visible_calculation_error(win):
     pick(win, "BTCUSDT")
     win.entry.set_text("1.1000")
     win.stop.set_text("1.0950")
