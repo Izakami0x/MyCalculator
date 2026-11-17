@@ -115,9 +115,11 @@ class Stat(QWidget):
         layout.addWidget(self.value)
 
     def set_value(self, text: str, tone: str = "") -> None:
-        self.value.setText(text)
-        self.value.setProperty("tone", tone)
-        repolish(self.value)
+        if self.value.text() != text:
+            self.value.setText(text)
+        if self.value.property("tone") != tone:
+            self.value.setProperty("tone", tone)
+            repolish(self.value)
 
 
 class StatusLine(QWidget):
@@ -138,10 +140,12 @@ class StatusLine(QWidget):
         self.kind = "info"
 
     def set_status(self, kind: str, text: str, tooltip: str = "") -> None:
-        self.kind = kind
-        self.dot.setProperty("kind", kind)
-        repolish(self.dot)
-        self.text.setText(text)
+        if self.kind != kind:
+            self.kind = kind
+            self.dot.setProperty("kind", kind)
+            repolish(self.dot)
+        if self.text.text() != text:
+            self.text.setText(text)
         self.setToolTip(tooltip or text)
 
 
