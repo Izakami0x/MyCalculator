@@ -73,6 +73,8 @@ QPushButton[role="primary"] { background: $accent; color: $on_accent; border: no
 QPushButton[role="primary"]:hover { background: $accent; }
 QPushButton[role="toggle"] { background: transparent; border: none; color: $muted; padding: 4px 8px; }
 QPushButton[role="toggle"][on="true"] { color: $text; }
+QToolButton[role="pin"] { min-width: 28px; min-height: 28px; padding: 3px; border-radius: 8px; }
+QToolButton[role="pin"][on="true"] { color: $accent; background: $button; }
 QPushButton[role="mode"] { background: transparent; border: 1px solid $border; border-radius: 8px; padding: 2px 8px; color: $muted; font-size: 10pt; }
 QPushButton[role="mode"]:hover { color: $text; border-color: $muted; }
 QPushButton[role="link"] { background: transparent; border: none; color: $muted; padding: 2px 6px; font-size: 9pt; }

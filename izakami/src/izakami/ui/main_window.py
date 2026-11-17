@@ -38,6 +38,9 @@ class MainWindow(QWidget):
         self._result_inst: Optional[Instrument] = None
         self._loading = False
         self._last_copy = 0.0
+        self._always_on_top = False
+        from .success_toast import SuccessToast
+        self._success_toast = SuccessToast(self)
         self._currency = "USD"
         self._risk_mode = RiskMode.PERCENT
 
@@ -73,8 +76,8 @@ class MainWindow(QWidget):
         self.card.setObjectName("Card")
         outer.addWidget(self.card)
         root = QVBoxLayout(self.card)
-        root.setContentsMargins(26, 18, 26, 12)
-        root.setSpacing(14)
+        root.setContentsMargins(20, 16, 20, 10)
+        root.setSpacing(10)
 
         # Header ---------------------------------------------------------------
         header = DragHeader()
@@ -100,13 +103,15 @@ class MainWindow(QWidget):
         titles.addWidget(sub)
         title_box = QWidget()
         title_box.setLayout(titles)
-        title_box.setMinimumWidth(190)  # never let the wordmark be squeezed and clipped
+        title_box.setMinimumWidth(130)
         hl.addWidget(title_box)
         hl.addStretch(1)
-        self.aot_btn = QPushButton("● Always On Top")
-        self.aot_btn.setMinimumWidth(130)
+        self.aot_btn = QToolButton()
+        self.aot_btn.setText("📍")
+        self.aot_btn.setToolTip("Always on top")
+        self.aot_btn.setAccessibleName("Always on top")
         self.aot_btn.setCheckable(True)
-        self.aot_btn.setProperty("role", "toggle")
+        self.aot_btn.setProperty("role", "pin")
         self.aot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.aot_btn.toggled.connect(self._on_aot_toggled)
         hl.addWidget(self.aot_btn)
@@ -461,6 +466,7 @@ class MainWindow(QWidget):
         text = qty_text(r.quantity, inst.quantity_decimals)
         QGuiApplication.clipboard().setText(text)
         self.status.set_status("ready", f"Copied {text} to the clipboard.")
+        self._success_toast.show_message("Lot size copied")
 
     def _on_hotkey(self, action: str) -> None:
         if action == ACTION_COPY:
@@ -485,6 +491,7 @@ class MainWindow(QWidget):
             return
         field = self.entry if outcome.kind == KIND_ENTRY else self.stop
         field.set_text(format_plain(outcome.value))
+        self._success_toast.show_message("Entry price pasted" if outcome.kind == KIND_ENTRY else "Stop Loss pasted")
         if self._result is None or self._result.ok:
             self.status.set_status("ready", outcome.message)
 
@@ -508,6 +515,7 @@ class MainWindow(QWidget):
             app.setStyleSheet(build_stylesheet(name))
         self.logo.set_color(palette(name)["text"])
         self.theme_btn.setText("☀" if name == "dark" else "☾")
+        self._success_toast.apply_theme(name)
 
     def toggle_theme(self) -> None:
         new = "light" if self.ctx.settings.get("theme") == "dark" else "dark"
@@ -515,16 +523,29 @@ class MainWindow(QWidget):
         self.apply_theme(new)
 
     def set_always_on_top(self, on: bool) -> None:
+        """Toggle native topmost state without hiding/recreating the Windows window."""
         on = bool(on)
-        if on != bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint):
-            geometry, visible = self.geometry(), self.isVisible()
-            self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
-            if visible:
-                self.show()
-                self.setGeometry(geometry)
+        if on != self._always_on_top:
+            try:
+                from ..platform.windows.window_effects import set_window_topmost
+                applied = set_window_topmost(self, on)
+            except (ImportError, OSError, AttributeError):
+                applied = False
+            if not applied:
+                # Non-Windows fallback; native Windows path above avoids Qt's hide/show cycle.
+                if self.isVisible():
+                    geometry = self.geometry()
+                    self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
+                    self.show()
+                    self.setGeometry(geometry)
+                else:
+                    self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, on)
+            self._always_on_top = on
         self.aot_btn.blockSignals(True)
         self.aot_btn.setChecked(on)
         self.aot_btn.blockSignals(False)
+        self.aot_btn.setText("📌" if on else "📍")
+        self.aot_btn.setToolTip("Unpin from top" if on else "Keep on top")
         self.aot_btn.setProperty("on", on)
         repolish(self.aot_btn)
 

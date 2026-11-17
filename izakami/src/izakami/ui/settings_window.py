@@ -36,7 +36,7 @@ class SettingsDialog(QDialog):
         self._open_instruments = open_instruments
         self.setWindowTitle("Izakami Settings")
         self.setModal(True)
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(460)
 
         tabs = QTabWidget()
         tabs.addTab(self._general_tab(), "General")
@@ -238,3 +238,11 @@ class SettingsDialog(QDialog):
         self.accept()
         if self._on_saved:
             self._on_saved()
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        try:
+            from ..platform.windows.window_effects import apply_titlebar_theme
+            apply_titlebar_theme(self, self.ctx.settings.get("theme"))
+        except (ImportError, OSError, AttributeError):
+            pass
