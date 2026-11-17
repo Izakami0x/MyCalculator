@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
-from PySide6.QtGui import QCursor, QGuiApplication
+from PySide6.QtGui import QColor, QCursor, QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
@@ -31,14 +31,14 @@ class SuccessToast(QFrame):
         self.label = QLabel(self)
         self.label.setObjectName("ToastLabel")
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(15, 11, 19, 11)
-        layout.setSpacing(11)
+        layout.setContentsMargins(17, 13, 22, 13)
+        layout.setSpacing(12)
         layout.addWidget(self.icon_label)
         layout.addWidget(self.label)
 
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(26)
-        shadow.setOffset(0, 6)
+        shadow.setBlurRadius(32)
+        shadow.setOffset(0, 8)
         self.setGraphicsEffect(shadow)
 
         self._shadow = shadow
@@ -53,37 +53,37 @@ class SuccessToast(QFrame):
     def apply_theme(self, name: str) -> None:
         if name == "light":
             bg, border, text, accent, accent_bg = (
-                "#f7f9fc",
-                "#cbd3df",
-                "#14171c",
-                "#0b9a69",
-                "rgba(11,154,105,0.12)",
+                "#eaf8f1",
+                "#19a873",
+                "#12382b",
+                "#ffffff",
+                "#12a36d",
             )
         else:
             bg, border, text, accent, accent_bg = (
-                "#252d39",
-                "#526071",
-                "#e8ebf0",
+                "#20372f",
                 "#2ecc8f",
-                "rgba(46,204,143,0.15)",
+                "#e9fff4",
+                "#10251c",
+                "#2ecc8f",
             )
         self.setStyleSheet(
             "QFrame#SuccessToast {"
-            f" background:{bg}; border:1px solid {border}; border-radius:14px;"
+            f" background:{bg}; border:1.5px solid {border}; border-radius:16px;"
             " }"
             "QLabel#ToastIcon {"
             f" color:{accent}; background:{accent_bg};"
-            " border-radius:12px; min-width:24px; max-width:24px;"
-            " min-height:24px; max-height:24px; font-size:14px;"
+            " border-radius:14px; min-width:28px; max-width:28px;"
+            " min-height:28px; max-height:28px; font-size:16px;"
             " font-weight:800; qproperty-alignment: AlignCenter;"
             " }"
             "QLabel#ToastLabel {"
-            f" color:{text}; font-size:10pt; font-weight:600;"
+            f" color:{text}; font-size:10.5pt; font-weight:700;"
             " background:transparent; border:none;"
             " }"
         )
-        self._shadow.setColor(Qt.GlobalColor.black)
-        self._shadow.setBlurRadius(24)
+        self._shadow.setColor(QColor("#0b9a69" if name == "light" else "#2ecc8f"))
+        self._shadow.setBlurRadius(30)
 
     def _screen_geometry(self):
         screen = QGuiApplication.screenAt(QCursor.pos())
