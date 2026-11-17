@@ -1,0 +1,42 @@
+name: UI UX preview build
+
+on:
+  push:
+    branches:
+      - uiux-adjustments-2026-11-17
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: izakami
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: izakami/requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q
+      - name: Build Windows application
+        run: python -m PyInstaller --noconfirm --clean --windowed --name IzakamiRiskCalculator --paths src run.py
+      - name: Assemble preview ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path preview | Out-Null
+          Copy-Item -Recurse dist/IzakamiRiskCalculator preview/
+          Copy-Item README.md, INSTALL_AND_RUN.bat, INSTALL_AND_RUN.vbs, RUN_IZAKAMI.bat, BUILD_EXE.bat preview/
+          Compress-Archive -Path preview/* -DestinationPath Izakami_UIUX_Preview.zip -Force
+      - name: Upload preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Izakami-UIUX-Preview
+          path: izakami/Izakami_UIUX_Preview.zip
+          if-no-files-found: error
+          retention-days: 14

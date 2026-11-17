@@ -30,7 +30,7 @@ def pick(w, symbol):
 def test_startup_defaults(win):
     assert win.isVisible() and win.balance.text() == "10000" and win.rr.text() == "2"
     assert win.direction_pill.text() == "—" and "Enter Entry and Stop Loss" in win.status.text.text()
-    assert win.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+    assert win._always_on_top and win.aot_btn.isChecked()
 
 
 def test_auto_recalculation_and_direction(win):
@@ -78,6 +78,7 @@ def test_copy_position_size_copies_only_the_number(win):
     win.stop.set_text("94500")
     win.copy_position_size()
     assert QGuiApplication.clipboard().text() == "0.020"
+    assert win._success_toast.label.text() == "Lot size copied" and win._success_toast.isVisible()
 
 
 def test_copy_without_result_reports_error(win):
@@ -106,10 +107,10 @@ def test_theme_switching_updates_whole_app_and_persists(win, ctx):
 
 def test_always_on_top_toggle(win, ctx):
     win.aot_btn.click()
-    assert not (win.windowFlags() & Qt.WindowType.WindowStaysOnTopHint)
+    assert not win._always_on_top and not win.aot_btn.isChecked()
     assert not ctx.settings.get_bool("always_on_top")
     win.aot_btn.click()
-    assert win.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+    assert win._always_on_top and win.aot_btn.isChecked()
 
 
 def test_account_fields_persist_across_restart(qtbot, tmp_path):
@@ -139,8 +140,10 @@ def test_capture_outcome_fills_field_and_failure_keeps_it(win):
     win.entry.set_text("100")
     win._on_capture_done(CaptureOutcome("entry", False, "nope"))
     assert win.entry.text() == "100" and win.status.kind == "error"
+    assert not win._success_toast.isVisible()
     win._on_capture_done(CaptureOutcome("entry", True, "Entry captured: 95000.5", D("95000.5")))
     assert win.entry.text() == "95000.5"
+    assert win._success_toast.label.text() == "Entry price pasted" and win._success_toast.isVisible()
 
 
 def test_deleting_selected_instrument_updates_combo(win, ctx):
