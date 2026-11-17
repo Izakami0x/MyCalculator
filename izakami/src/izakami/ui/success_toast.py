@@ -83,10 +83,12 @@ class SuccessToast(QFrame):
         return screen.availableGeometry() if screen is not None else None
 
     def _stop_animation(self) -> None:
-        if self._animation is not None:
-            self._animation.stop()
-            self._animation.deleteLater()
-            self._animation = None
+        for animation in (self._animation, self._fade_animation):
+            if animation is not None:
+                animation.stop()
+                animation.deleteLater()
+        self._animation = None
+        self._fade_animation = None
 
     def show_message(self, message: str) -> None:
         self._timer.stop()
@@ -97,6 +99,7 @@ class SuccessToast(QFrame):
 
         area = self._screen_geometry()
         if area is None:
+            self.setWindowOpacity(1.0)
             self.show()
             self.raise_()
             self._timer.start(2200)
