@@ -92,7 +92,8 @@ class Field(QFrame):
         return self.edit.text()
 
     def set_text(self, text: str) -> None:
-        self.edit.setText(text)
+        if self.edit.text() != text:
+            self.edit.setText(text)
 
     def set_suffix(self, text: str) -> None:
         self.suffix.setText(text)
@@ -115,9 +116,11 @@ class Stat(QWidget):
         layout.addWidget(self.value)
 
     def set_value(self, text: str, tone: str = "") -> None:
-        self.value.setText(text)
-        self.value.setProperty("tone", tone)
-        repolish(self.value)
+        if self.value.text() != text:
+            self.value.setText(text)
+        if self.value.property("tone") != tone:
+            self.value.setProperty("tone", tone)
+            repolish(self.value)
 
 
 class StatusLine(QWidget):
@@ -135,14 +138,20 @@ class StatusLine(QWidget):
         self.text.setWordWrap(False)
         layout.addWidget(self.dot)
         layout.addWidget(self.text, 1)
-        self.kind = "info"
+        self.kind = ""
 
     def set_status(self, kind: str, text: str, tooltip: str = "") -> None:
-        self.kind = kind
-        self.dot.setProperty("kind", kind)
-        repolish(self.dot)
-        self.text.setText(text)
-        self.setToolTip(tooltip or text)
+        if self.kind != kind:
+            self.kind = kind
+            self.dot.setProperty("kind", kind)
+            self.text.setProperty("kind", kind)
+            repolish(self.dot)
+            repolish(self.text)
+        if self.text.text() != text:
+            self.text.setText(text)
+        effective_tooltip = tooltip or text
+        if self.toolTip() != effective_tooltip:
+            self.setToolTip(effective_tooltip)
 
 
 class DragHeader(QFrame):

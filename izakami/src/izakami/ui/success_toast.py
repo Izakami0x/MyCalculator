@@ -51,21 +51,22 @@ class SuccessToast(QFrame):
         self.apply_theme("dark")
 
     def apply_theme(self, name: str) -> None:
-        if name == "light":
+        self._theme = name
+        self._apply_palette("success")
+
+    def _apply_palette(self, kind: str) -> None:
+        if kind == "error":
+            if self._theme == "light":
+                bg, border, text, accent, accent_bg = ("#fff0f1", "#dc3545", "#541820", "#ffffff", "#cf2638")
+            else:
+                bg, border, text, accent, accent_bg = ("#3d252b", "#ff5266", "#fff0f2", "#2b1117", "#ff5266")
+        elif self._theme == "light":
             bg, border, text, accent, accent_bg = (
-                "#eaf8f1",
-                "#19a873",
-                "#12382b",
-                "#ffffff",
-                "#12a36d",
+                "#eaf8f1", "#19a873", "#12382b", "#ffffff", "#12a36d",
             )
         else:
             bg, border, text, accent, accent_bg = (
-                "#20372f",
-                "#2ecc8f",
-                "#e9fff4",
-                "#10251c",
-                "#2ecc8f",
+                "#20372f", "#2ecc8f", "#e9fff4", "#10251c", "#2ecc8f",
             )
         self.setStyleSheet(
             "QFrame#SuccessToast {"
@@ -82,7 +83,7 @@ class SuccessToast(QFrame):
             " background:transparent; border:none;"
             " }"
         )
-        self._shadow.setColor(QColor("#0b9a69" if name == "light" else "#2ecc8f"))
+        self._shadow.setColor(QColor("#b42336" if kind == "error" and self._theme == "light" else "#ff5266" if kind == "error" else "#0b9a69" if self._theme == "light" else "#2ecc8f"))
         self._shadow.setBlurRadius(30)
 
     def _screen_geometry(self):
@@ -102,9 +103,17 @@ class SuccessToast(QFrame):
         self._fade_animation = None
 
     def show_message(self, message: str) -> None:
+        self._show(message, "success")
+
+    def show_error_message(self, message: str) -> None:
+        self._show(message, "error")
+
+    def _show(self, message: str, kind: str) -> None:
         self._timer.stop()
         self._stop_animation()
         self._hiding = False
+        self.icon_label.setText("!" if kind == "error" else "✓")
+        self._apply_palette(kind)
         self.label.setText(message)
         self.adjustSize()
 

@@ -38,6 +38,7 @@ class MainWindow(QWidget):
         self._result_inst: Optional[Instrument] = None
         self._loading = False
         self._last_copy = 0.0
+        self._last_error_toast_key: tuple[str, str] | None = None
         self._always_on_top = False
         from .success_toast import SuccessToast
         self._success_toast = SuccessToast(self)
@@ -325,7 +326,6 @@ class MainWindow(QWidget):
             self._update_hints()
         finally:
             self._loading = False
-        self.recalculate()
 
     def _sync_risk_field(self) -> None:
         acc = self.ctx.settings.account()
@@ -425,7 +425,8 @@ class MainWindow(QWidget):
         self._render(result, inst)
 
     def _clear_numbers(self) -> None:
-        self.size_value.setText("—")
+        if self.size_value.text() != "—":
+            self.size_value.setText("—")
         for stat in (self.position_value, self.margin, self.risk_amount):
             stat.set_value("—")
         self.risk_distance.set_value("—")
@@ -435,31 +436,51 @@ class MainWindow(QWidget):
 
     def _set_direction(self, direction: Optional[Direction]) -> None:
         tone = {Direction.LONG: "long", Direction.SHORT: "short"}.get(direction, "")
-        self.direction_pill.setText({"long": "▲  LONG", "short": "▼  SHORT"}.get(tone, "—"))
-        self.direction_pill.setProperty("direction", tone)
-        self.accent.setProperty("tone", tone)
-        repolish(self.direction_pill)
-        repolish(self.accent)
+        label = {"long": "▲  LONG", "short": "▼  SHORT"}.get(tone, "—")
+        if self.direction_pill.text() != label:
+            self.direction_pill.setText(label)
+        if self.direction_pill.property("direction") != tone:
+            self.direction_pill.setProperty("direction", tone)
+            repolish(self.direction_pill)
+        if self.accent.property("tone") != tone:
+            self.accent.setProperty("tone", tone)
+            repolish(self.accent)
 
     def _render(self, r: Optional[CalculationResult], inst: Instrument) -> None:
         cur = self._currency
-        self._clear_numbers()
-        self.size_unit.setText(inst.quantity_unit)
+        if self.size_unit.text() != inst.quantity_unit:
+            self.size_unit.setText(inst.quantity_unit)
         if r is None:
+            self._last_error_toast_key = None
+            self._clear_numbers()
             self._set_direction(None)
             self.status.set_status("info", "Enter Entry and Stop Loss to calculate.")
             return
         self._set_direction(r.direction)
+        if not r.ok:
+            self._clear_numbers()
+            if r.risk_amount is not None:
+                self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
+            configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
+            self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
+            details = "\n".join(r.errors)
+            guidance = f"Selected instrument: {inst.symbol}. Check the instrument and Entry / Stop Loss prices."
+            self.status.set_status("error", r.errors[0], f"{details}\n{guidance}")
+            error_key = (inst.symbol, r.errors[0])
+            if error_key != self._last_error_toast_key:
+                self._success_toast.show_error_message(f"Invalid inputs • {inst.symbol}")
+                self._last_error_toast_key = error_key
+            return
+        self._last_error_toast_key = None
         if r.risk_amount is not None:
             self.risk_amount.set_value(f"{fmt_money(r.risk_amount)} {cur}")
         configured_leverage = inst.leverage if inst.leverage is not None else self.ctx.settings.get_decimal("default_leverage")
         self.risk_distance.set_value(f"{format_plain(configured_leverage)}x")
-        if not r.ok:
-            self.status.set_status("error", r.errors[0], "\n".join(r.errors))
-            return
         assert r.quantity is not None and r.notional is not None and r.margin is not None
         assert r.potential_loss is not None and r.potential_profit is not None and r.take_profit is not None
-        self.size_value.setText(fmt_qty(r.quantity, inst.quantity_decimals))
+        size_text = fmt_qty(r.quantity, inst.quantity_decimals)
+        if self.size_value.text() != size_text:
+            self.size_value.setText(size_text)
         self.position_value.set_value(f"{fmt_money(r.notional)} {cur}")
         self.margin.set_value(f"≈ {fmt_money(r.margin)} {cur}")
         if r.recommended_leverage is not None:
@@ -590,6 +611,7 @@ class MainWindow(QWidget):
     def _after_settings_saved(self) -> None:
         self.apply_theme(self.ctx.settings.get("theme"))
         self._load_from_settings()
+        self.recalculate()
         self.set_always_on_top(self.ctx.settings.get_bool("always_on_top"))
         self.apply_hotkeys(show_dialog=True)
 

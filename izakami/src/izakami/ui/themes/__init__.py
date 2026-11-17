@@ -42,6 +42,8 @@ QFrame#Accent[tone="short"] { background: $red; }
 QLabel { background: transparent; border: none; }
 QLabel[role="caption"] { color: $muted; font-size: 9pt; }
 QLabel[role="hint"] { color: $muted; font-size: 8pt; }
+QLabel[role="hint"][kind="error"] { color: $red; font-size: 9pt; font-weight: 700; }
+QLabel[role="hint"][kind="warn"] { color: $amber; font-size: 9pt; font-weight: 600; }
 QLabel[role="suffix"] { color: $muted; font-size: 10pt; }
 QLabel#Wordmark { font-size: 17pt; font-weight: 600; }
 QLabel#Subtitle { color: $muted; font-size: 8pt; }

@@ -33,6 +33,28 @@ def test_startup_defaults(win):
     assert win._always_on_top and win.aot_btn.isChecked()
 
 
+def test_startup_runs_initial_calculation_once(qtbot, tmp_path):
+    ctx = create_context(tmp_path / "startup.db", use_platform=False)
+    original = ctx.calc.calculate_from_text
+    calls = []
+
+    def counted_calculation(**kwargs):
+        calls.append(1)
+        return original(**kwargs)
+
+    ctx.calc.calculate_from_text = counted_calculation
+    w = MainWindow(ctx)
+    qtbot.addWidget(w)
+    assert len(calls) == 1
+
+
+def test_setting_field_to_same_text_does_not_emit_change(win):
+    changes = []
+    win.entry.edit.textChanged.connect(changes.append)
+    win.entry.set_text(win.entry.text())
+    assert changes == []
+
+
 def test_auto_recalculation_and_direction(win):
     pick(win, "BTCUSDT")
     win.balance.set_text("1000")
@@ -45,6 +67,20 @@ def test_auto_recalculation_and_direction(win):
     assert "SHORT" in win.direction_pill.text() and win.direction_pill.property("direction") == "short"
     win.rr.set_text("3")
     assert win.tp.text() == "93,500.00"  # 95000 - 3 x 500
+
+
+def test_btcusdt_with_forex_prices_shows_visible_calculation_error(win):
+    pick(win, "BTCUSDT")
+    win.entry.set_text("1.1000")
+    win.stop.set_text("1.0950")
+    assert win.size_value.text() == "—"
+    assert win.status.kind == "error"
+    assert win.status.text.property("kind") == "error"
+    assert "exceeds the maximum" in win.status.text.text()
+    assert "BTCUSDT" in win.status.toolTip() or "BTCUSDT" in win.status.text.text()
+    assert win._success_toast.label.text() == "Invalid inputs • BTCUSDT"
+    assert win._success_toast.icon_label.text() == "!"
+    assert win._success_toast.isVisible()
 
 
 def test_error_clears_stale_numbers(win):
