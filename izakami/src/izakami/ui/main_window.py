@@ -611,9 +611,9 @@ class MainWindow(QWidget):
     def _after_settings_saved(self) -> None:
         self.apply_theme(self.ctx.settings.get("theme"))
         self._load_from_settings()
+        self.recalculate()
         self.set_always_on_top(self.ctx.settings.get_bool("always_on_top"))
         self.apply_hotkeys(show_dialog=True)
-        self.recalculate()
 
     def open_instrument_manager(self) -> None:
         from .instrument_manager import InstrumentManager
