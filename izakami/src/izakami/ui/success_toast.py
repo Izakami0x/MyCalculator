@@ -1,39 +1,158 @@
-"""Small, theme-aware success toast for completed clipboard actions."""
+"""Animated, theme-aware success toast for completed clipboard actions."""
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import (
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
+    QGuiApplication,
+    QHBoxLayout,
+    QLabel,
+)
 
 
 class SuccessToast(QFrame):
+    """A non-intrusive toast anchored to the active screen's bottom-right corner."""
+
     def __init__(self, parent):
-        super().__init__(parent, Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
+        super().__init__(
+            parent,
+            Qt.WindowType.ToolTip
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowDoesNotAcceptFocus,
+        )
         self.setObjectName("SuccessToast")
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+        self.icon_label = QLabel("✓", self)
+        self.icon_label.setObjectName("ToastIcon")
         self.label = QLabel(self)
         self.label.setObjectName("ToastLabel")
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 9, 14, 9)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(15, 11, 19, 11)
+        layout.setSpacing(11)
+        layout.addWidget(self.icon_label)
         layout.addWidget(self.label)
+
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(26)
+        shadow.setOffset(0, 6)
+        self.setGraphicsEffect(shadow)
+
+        self._opacity = QGraphicsOpacityEffect(self)
+        self._opacity.setOpacity(1.0)
+        self.setGraphicsEffect(shadow)
+        # Keep opacity on the top-level widget without replacing the shadow effect:
+        # the shadow is applied to the inner content through the stylesheet instead.
+        self._shadow = shadow
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self.hide)
+        self._timer.timeout.connect(self._animate_out)
+        self._animation: QPropertyAnimation | None = None
+        self._hiding = False
         self.apply_theme("dark")
 
     def apply_theme(self, name: str) -> None:
         if name == "light":
-            self.setStyleSheet("QFrame#SuccessToast { background:#ffffff; border:1px solid #cfd3db; border-radius:9px; } QLabel#ToastLabel { color:#14171c; font-weight:600; }")
+            bg, border, text, accent = "#ffffff", "#dfe2e8", "#14171c", "#0b9a69"
         else:
-            self.setStyleSheet("QFrame#SuccessToast { background:#222730; border:1px solid #323a47; border-radius:9px; } QLabel#ToastLabel { color:#e8ebf0; font-weight:600; }")
+            bg, border, text, accent = "#20262f", "#35404d", "#e8ebf0", "#2ecc8f"
+        self.setStyleSheet(
+            "QFrame#SuccessToast {"
+            f" background:{bg}; border:1px solid {border}; border-radius:14px;"
+            " }"
+            "QLabel#ToastIcon {"
+            f" color:{accent}; background:rgba(46,204,143,0.13);"
+            " border-radius:12px; min-width:24px; max-width:24px;"
+            " min-height:24px; max-height:24px; font-size:14px;"
+            " font-weight:800; qproperty-alignment: AlignCenter;"
+            " }"
+            "QLabel#ToastLabel {"
+            f" color:{text}; font-size:10pt; font-weight:600;"
+            " background:transparent; border:none;"
+            " }"
+        )
+        self._shadow.setColor(Qt.GlobalColor.black)
+        self._shadow.setBlurRadius(24)
+
+    def _screen_geometry(self):
+        screen = QGuiApplication.screenAt(QCursor.pos())
+        if screen is None and self.parentWidget() is not None:
+            screen = self.parentWidget().screen()
+        if screen is None:
+            screen = QGuiApplication.primaryScreen()
+        return screen.availableGeometry() if screen is not None else None
+
+    def _stop_animation(self) -> None:
+        if self._animation is not None:
+            self._animation.stop()
+            self._animation.deleteLater()
+            self._animation = None
 
     def show_message(self, message: str) -> None:
+        self._timer.stop()
+        self._stop_animation()
+        self._hiding = False
         self.label.setText(message)
         self.adjustSize()
-        parent = self.parentWidget()
-        if parent is not None:
-            self.move(parent.mapToGlobal(parent.rect().topLeft()).x() + 12,
-                      parent.mapToGlobal(parent.rect().topLeft()).y() + 12)
+
+        area = self._screen_geometry()
+        if area is None:
+            self.show()
+            self.raise_()
+            self._timer.start(2200)
+            return
+
+        margin = 24
+        end_pos = QPoint(
+            area.x() + area.width() - self.width() - margin,
+            area.y() + area.height() - self.height() - margin,
+        )
+        start_pos = end_pos + QPoint(34, 0)
+        self.move(start_pos)
+        self._opacity.setOpacity(0.0)
         self.show()
         self.raise_()
-        self._timer.start(1800)
+
+        # Animate position and opacity together for a soft, floating entrance.
+        self._animation = QPropertyAnimation(self, b"pos", self)
+        self._animation.setDuration(320)
+        self._animation.setStartValue(start_pos)
+        self._animation.setEndValue(end_pos)
+        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._animation.start()
+
+        fade = QPropertyAnimation(self._opacity, b"opacity", self)
+        fade.setDuration(260)
+        fade.setStartValue(0.0)
+        fade.setEndValue(1.0)
+        fade.setEasingCurve(QEasingCurve.Type.OutCubic)
+        fade.start()
+        self._fade_animation = fade
+        self._timer.start(2300)
+
+    def _animate_out(self) -> None:
+        if not self.isVisible() or self._hiding:
+            return
+        self._hiding = True
+        self._stop_animation()
+        start_pos = self.pos()
+        end_pos = start_pos + QPoint(22, 0)
+        self._animation = QPropertyAnimation(self, b"pos", self)
+        self._animation.setDuration(220)
+        self._animation.setStartValue(start_pos)
+        self._animation.setEndValue(end_pos)
+        self._animation.setEasingCurve(QEasingCurve.Type.InCubic)
+        self._animation.finished.connect(self.hide)
+        self._animation.start()
+        fade = QPropertyAnimation(self._opacity, b"opacity", self)
+        fade.setDuration(200)
+        fade.setStartValue(1.0)
+        fade.setEndValue(0.0)
+        fade.setEasingCurve(QEasingCurve.Type.InCubic)
+        fade.start()
+        self._fade_animation = fade
