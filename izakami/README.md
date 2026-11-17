@@ -7,7 +7,7 @@ position value, estimated margin, potential loss and potential profit.
 ## Install and run (no terminal needed)
 
 1. Install **Python 3.11 or newer** from python.org (tick *Add python.exe to PATH*).
-2. Extract the ZIP anywhere and double-click **`INSTALL_AND_RUN.bat`**.
+2. Open the **`izakami`** project folder and double-click **`INSTALL_AND_RUN.bat`**.
    It creates a private `.venv` inside the folder, installs PySide6 and starts Izakami.
 3. Next time double-click **`RUN_IZAKAMI.bat`**, or **`INSTALL_AND_RUN.vbs`** for a launch with no
    console window at all. If setup fails, see `install.log` in the same folder.
