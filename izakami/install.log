@@ -1,0 +1,38 @@
+[17/11/2026 16:53:22.41] Setup started 
+Using: py -3 
+In C:\Users\Izakami\AppData\Local\Python\pythoncore-3.15-64\Lib\site-packages\__editable__.izakami_trade_manager-0.1.0.pth: E:\Downloads\izakami_trade_manager_full_mvp\izakami_trade_manager\src does not exist; skipping sys.path append
+C:\Users\Izakami\AppData\Local\Python\pythoncore-3.15-64\python.exe
+3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]
+In C:\Users\Izakami\AppData\Local\Python\pythoncore-3.15-64\Lib\site-packages\__editable__.izakami_trade_manager-0.1.0.pth: E:\Downloads\izakami_trade_manager_full_mvp\izakami_trade_manager\src does not exist; skipping sys.path append
+Requirement already satisfied: pip in .\.venv\Lib\site-packages (26.2.2)
+Collecting pip
+  Using cached pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+Using cached pip-26.3-py3-none-any.whl (2.0 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 26.2.2
+    Uninstalling pip-26.2.2:
+      Successfully uninstalled pip-26.2.2
+Successfully installed pip-26.3
+Collecting PySide6<7,>=6.6 (from -r requirements.txt (line 1))
+  Using cached pyside6-6.12.0-cp310-abi3-win_amd64.whl.metadata (5.7 kB)
+Collecting PySide6_Essentials==6.12.0 (from PySide6<7,>=6.6->-r requirements.txt (line 1))
+  Using cached pyside6_essentials-6.12.0-cp310-abi3-win_amd64.whl.metadata (3.9 kB)
+Collecting PySide6_Addons==6.12.0 (from PySide6<7,>=6.6->-r requirements.txt (line 1))
+  Using cached pyside6_addons-6.12.0-cp310-abi3-win_amd64.whl.metadata (4.4 kB)
+Collecting PySide6_WebEngine==6.12.0.140 (from PySide6<7,>=6.6->-r requirements.txt (line 1))
+  Using cached pyside6_webengine-6.12.0.140-cp310-abi3-win_amd64.whl.metadata (3.7 kB)
+Collecting PySide6_Pdf==6.12.0.140 (from PySide6<7,>=6.6->-r requirements.txt (line 1))
+  Using cached pyside6_pdf-6.12.0.140-cp310-abi3-win_amd64.whl.metadata (3.6 kB)
+Collecting shiboken6==6.12.0 (from PySide6_Essentials==6.12.0->PySide6<7,>=6.6->-r requirements.txt (line 1))
+  Using cached shiboken6-6.12.0-cp310-abi3-win_amd64.whl.metadata (2.6 kB)
+Using cached pyside6-6.12.0-cp310-abi3-win_amd64.whl (578 kB)
+Using cached pyside6_addons-6.12.0-cp310-abi3-win_amd64.whl (40.5 MB)
+Using cached pyside6_essentials-6.12.0-cp310-abi3-win_amd64.whl (82.2 MB)
+Using cached pyside6_pdf-6.12.0.140-cp310-abi3-win_amd64.whl (3.0 MB)
+Using cached pyside6_webengine-6.12.0.140-cp310-abi3-win_amd64.whl (131.7 MB)
+Using cached shiboken6-6.12.0-cp310-abi3-win_amd64.whl (1.3 MB)
+Installing collected packages: shiboken6, PySide6_Essentials, PySide6_Pdf, PySide6_Addons, PySide6_WebEngine, PySide6
+
+Successfully installed PySide6-6.12.0 PySide6_Addons-6.12.0 PySide6_Essentials-6.12.0 PySide6_Pdf-6.12.0.140 PySide6_WebEngine-6.12.0.140 shiboken6-6.12.0
+Setup finished 
