@@ -53,11 +53,19 @@ class SuccessToast(QFrame):
     def apply_theme(self, name: str) -> None:
         if name == "light":
             bg, border, text, accent, accent_bg = (
-                "#ffffff", "#dfe2e8", "#14171c", "#0b9a69", "rgba(11,154,105,0.10)"
+                "rgba(250,252,255,0.90)",
+                "rgba(255,255,255,0.72)",
+                "#14171c",
+                "#0b9a69",
+                "rgba(11,154,105,0.12)",
             )
         else:
             bg, border, text, accent, accent_bg = (
-                "#20262f", "#35404d", "#e8ebf0", "#2ecc8f", "rgba(46,204,143,0.13)"
+                "rgba(29,36,47,0.91)",
+                "rgba(255,255,255,0.14)",
+                "#e8ebf0",
+                "#2ecc8f",
+                "rgba(46,204,143,0.15)",
             )
         self.setStyleSheet(
             "QFrame#SuccessToast {"
@@ -110,8 +118,8 @@ class SuccessToast(QFrame):
 
         margin = 24
         end_pos = QPoint(
-            area.x() + area.width() - self.width() - margin,
-            area.y() + area.height() - self.height() - margin,
+            area.x() + (area.width() - self.width()) // 2,
+            area.y() + margin,
         )
         start_pos = end_pos + QPoint(34, 0)
         self.move(start_pos)
