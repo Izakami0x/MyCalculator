@@ -83,7 +83,7 @@ class SuccessToast(QFrame):
             " background:transparent; border:none;"
             " }"
         )
-        self._shadow.setColor(QColor("#0b9a69" if name == "light" else "#2ecc8f"))
+        self._shadow.setColor(QColor("#b42336" if kind == "error" and self._theme == "light" else "#ff5266" if kind == "error" else "#0b9a69" if self._theme == "light" else "#2ecc8f"))
         self._shadow.setBlurRadius(30)
 
     def _screen_geometry(self):
